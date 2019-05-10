@@ -1,192 +1,55 @@
 <meta charset="UTF-8">
-<button id="click">click to start</button>
-<button id="close">click to close</button>
+<button id="click">click to load</button>
 <script>
-    var popups = [],
-        keys = {},
-
+    var popups,
         levelHeight = 6,
-        levelWidth = 15,
-    
-        popupWidth = 500,
-        popupHeight = 0,
-        popupGap = 50,
+        popupGap = undefined;
 
-        didMove = false,
+    function setupPopups() {
+        var i, settings, popup, y,
+            popupWidth = window.outerWidth,
+            popupHeight = 50,
+            x = window.screenX,
+            yOffset = window.screenY + (window.outerHeight - window.innerHeight);
 
-        playerX = 0,
-        playerY = levelHeight - 1,
-
-        barrels = [],
-        barrelMap = {};
-
-    var map = [
-            '203000000000000',
-            '000000000000100',
-            '100100000000000',
-            '000000010000100',
-            '100001000000000',
-            '000000000000100',
-        ];
-
-
-    function render() {
-        popups.forEach(function (popup, y) {
-            var s = '', x;
-
-            for (x = 0; x < levelWidth; x ++) {
-                if (barrelMap[x+','+y]) {
-                    s += '🔴';
-                }
-                else if (y == Math.floor(playerY) && x == Math.floor(playerX)) {
-                    if (didMove) {
-                        if (Math.floor(performance.now()/200) % 2) {
-                            s += '🚶';
-                        }
-                        else {
-                            s += '🏃';
-                        }
-                    }
-                    else {
-                        s += '🚶';
-                    }
-                }
-                else {
-                    //if (map[y][x] == 0) s += '⠀';
-                    //if (map[y][x] == 0) s += '⬛';
-                    if (map[y][x] == 0) s += '⬜';
-                    else if (map[y][x] == '1') s += '⬆';
-                    else if (map[y][x] == '2') s += '🛢';
-                    else if (map[y][x] == '3') s += '🦍';
-                }
-            }
-
-            popup.document.location.hash = '🔶' + s + '🔶';
-        });
-    }
-
-    function takeInput() {
-        var xMove = 0, yMove = 0, speed = .1;
-
-        didMove = false;
-
-        if (keys[37]) {
-            didMove = true;
-            playerX -= speed; // left
-        }
-        if (keys[39]) {
-            didMove = true;
-            playerX += speed; // right
-        }
-
-        if (keys[38]) {
-            if (map[Math.floor(playerY)][Math.floor(playerX)] == '1') {
-                playerY -= speed; // up
-            }
-        }
-        if (keys[40]) {
-            if (Math.floor(playerY) < levelHeight - 1) {
-                if (map[Math.floor(playerY)+1][Math.floor(playerX)] == '1') {
-                    playerY += speed; // down
-                }
-            }
-        }
-
-        if (playerX < 0) playerX = 0;
-        else if (playerX >= levelWidth) playerX = levelWidth - 1;
-
-        if (playerY < 0) playerY = 0;
-        else if (playerY >= levelHeight) playerY = levelHeight - 1;
-    }
-
-    function moveBarrels() {
-        var freshBarrels = [], speed = .1;
-
-        barrelMap = {};
-
-        barrels.forEach(function (barrel) {
-            if (barrel.d == 1) {
-                if (Math.floor(barrel.x) == levelWidth-1) {
-                    barrel.y ++;
-                    barrel.d = 0;
-                }
-                else {
-                    barrel.x += speed;
-                }
-            }
-            else {
-                if (Math.floor(barrel.x) == 0) {
-                    barrel.y ++;
-                    barrel.d = 1;
-                }
-                else {
-                    barrel.x -= speed;
-                }
-            }
-
-            if (barrel.y < levelHeight) {
-                barrelMap[Math.floor(barrel.x)+','+Math.floor(barrel.y)] = true;
-                freshBarrels.push(barrel);
-            }
-        });
-
-        barrels = freshBarrels;
-    }
-
-    function addBarrel() {
-        barrels.push({x:3,y:0,d:1});
-
-        setTimeout(addBarrel, 5000 + (Math.random() * 5000));
-    }
-
-    function loop() {
-        takeInput();
-        moveBarrels();
-        render();
-
-        setTimeout(loop, 1000/60);
-    }
-
-    function setupWindows() {
-        var i, popup, y;
+        popups = [];
 
         for (i = 0; i < levelHeight; i ++) {
-            y = i * popupGap + 25;
-            popup = window.open('about:blank#'+i, 'w'+i, 'width='+popupWidth+',height='+popupHeight+',left='+100+',top='+y);
-            if (!i) {
-                popup.document.title = '"Donkey Kong" lol'
+            y = i * (popupGap||50) + yOffset;
+
+            settings = 'width='+popupWidth+',height='+popupHeight+',left='+x+',top='+y;
+
+            popup = window.open('dk.html#'+i, 'w'+i, settings);
+
+            if (popupGap == undefined) {
+                setTimeout(function () {
+                    popupGap = popup.outerHeight - popup.innerHeight;
+                    //popup.close();
+                    setupPopups();
+                }, 500);
+                return;
             }
             else {
-                //popup.document.title = '⠀'
-                popup.document.title = '==================================================';
-            }
-            popup.moveTo(0, y);
-            popup.resizeTo(popupWidth, popupHeight);
+                //popup.resizeTo(popupWidth, popupHeight);
+                //popup.moveTo(x, y);
 
-            popups.push(popup);
+                popups.push(popup);
+            }
         }
 
-    }
-
-    function closeWindows() {
-        popups.forEach(function (popup) {
-            popup.close();
-        });
+        setTimeout(function () {
+            popups.forEach(function (popup) {
+                popup.document.title = '-';
+            });
+            popups[5].popups = popups;
+            popups[5].setup();
+        }, 1000);
     }
 
     window.addEventListener('load', function () {
-        document.getElementById('close').addEventListener('click', closeWindows);
-
-        setupWindows();
-        addBarrel();
-        loop();
-    });
-
-    document.addEventListener('keydown', function (event) {
-        keys[event.which] = true;
-    });
-
-    document.addEventListener('keyup', function (event) {
-        keys[event.which] = false;
+        document.getElementById('click').addEventListener(
+            'click',
+            setupPopups
+        );
     });
 </script>
