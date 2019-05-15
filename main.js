@@ -12,19 +12,21 @@ var popups = [],
 
     playerX = 0,
     playerY = levelHeight - 1,
+    death = 0,
 
     barrels = [],
     barrelMap = {},
 
+    nextBarrelAdd = 0,
     lastBarrelMove = 0,
     lastPlayerMove = 0,
 
-    running = true,
+    running = false,
     
     closeButton;
 
 var map = [
-        '2 3            ',
+        '               ',
         '            1  ',
         '1  1           ',
         '       1    1  ',
@@ -34,32 +36,66 @@ var map = [
 
 
 function render() {
+    var timeToBarrel = nextBarrelAdd - performance.now(),
+        barrelShown = false,
+        gorillaX = 2;
+
+    if (timeToBarrel < 5000 && timeToBarrel > 4000) {
+        barrelShown = true;
+    }
+    if (timeToBarrel < 4000 && timeToBarrel > 3000) {
+        barrelShown = true;
+    }
+    if (timeToBarrel < 3000 && timeToBarrel > 2000) {
+        barrelShown = true;
+        gorillaX = 1;
+    }
+    if (timeToBarrel < 2000 && timeToBarrel > 1000) {
+        gorillaX = 1;
+    }
+    if (timeToBarrel < 1000 && timeToBarrel > 0000) {
+    }
+
     popups.forEach(function (popup, y) {
         var s = '', x;
 
         for (x = 0; x < levelWidth; x ++) {
-            if (barrelMap[x+','+y]) {
-                s += '🔴';
-            }
-            else if (y == Math.floor(playerY) && x == Math.floor(playerX)) {
-                if (didMove) {
-                    if (Math.floor(performance.now()/200) % 2) {
-                        s += '🚶';
+            if (y == Math.floor(playerY) && x == Math.floor(playerX)) {
+                if (death > 0) {
+                    if (Math.floor(death) % 2) {
+                        s += '☠️';
                     }
                     else {
-                        s += '🏃';
+                        s += '💀';
                     }
                 }
                 else {
-                    s += '🚶';
+                    if (didMove) {
+                        if (Math.floor(performance.now()/200) % 2) {
+                            s += '🚶';
+                        }
+                        else {
+                            s += '🏃';
+                        }
+                    }
+                    else {
+                        s += '🚶';
+                    }
                 }
+            }
+            else if (y == 0 && x == gorillaX) {
+                s += '🦍';
+            }
+            else if (y == 0 && x == 0 && barrelShown) {
+                s += '🛢';
+            }
+            else if (barrelMap[x+','+y]) {
+                s += '🔴';
             }
             else {
                 //if (map[y][x] == 0) s += '⠀';
                 //if (map[y][x] == 0) s += '⬛';
                 if (map[y][x] == '1') s += '⬆';
-                else if (map[y][x] == '2') s += '🛢';
-                else if (map[y][x] == '3') s += '🦍';
                 else s += '⬜';
             }
         }
@@ -147,30 +183,66 @@ function moveBarrels() {
 }
 
 function addBarrel() {
-    barrels.push({x:3,y:0,d:1});
+    barrels.push({x:2, y:0, d:1});
 
-    setTimeout(addBarrel, 5000 + (Math.random() * 5000));
+    nextBarrelAdd = performance.now() + 3000 + (Math.random() * 5000);
+}
+
+function checkDeath() {
+    if (barrelMap[Math.floor(playerX) +','+ Math.floor(playerY)]) {
+        running = false;
+        death = 10;
+    }
 }
 
 function loop() {
     var now = performance.now();
 
-    if (!running) return;
+    if (running) {
+        if (now - lastPlayerMove >= 200) {
+            movePlayer();
+            checkDeath();
+        }
+        if (now - lastBarrelMove >= 150) {
+            moveBarrels();
+            checkDeath();
+        }
+        if (now > nextBarrelAdd) addBarrel();
+    }
 
-    if (now - lastPlayerMove >= 200) movePlayer();
-    if (now - lastBarrelMove >= 150) moveBarrels();
+    if (death > 0) {
+        death -= .1;
+
+        if (death <= 0) {
+            death = 0;
+            startLevel();
+        }
+    }
 
     render();
 
-    setTimeout(loop, 1000/60);
+    setTimeout(loop, 1000/30);
+}
+
+function startLevel() {
+    playerX = 0;
+    playerY = levelHeight - 1;
+    barrels = [];
+    barrelMap = {};
+    lastBarrelMove = 0;
+    lastPlayerMove = 0;
+    running = true;
 }
 
 function closeWindows() {
+    var popup;
+
     running = false;
 
-    popups.forEach(function (popup) {
+    while (popups.length) {
+        popup = popups.shift();
         popup.close();
-    });
+    }
 }
 
 function setup() {
@@ -189,6 +261,6 @@ function setup() {
     closeButton.addEventListener('click', closeWindows);
     document.body.appendChild(closeButton);
 
-    addBarrel();
+    startLevel();
     loop();
 }
