@@ -2,7 +2,7 @@
 <button id="click">click to load</button>
 <script>
     var popups,
-        levelHeight = 6,
+        levelHeight = 7,
         popupGap = undefined;
 
     function setupPopups() {
@@ -19,7 +19,7 @@
 
             settings = 'width='+popupWidth+',height='+popupHeight+',left='+x+',top='+y;
 
-            popup = window.open('dk.html#'+i, 'w'+i, settings);
+            popup = window.open('break.html#'+i, 'w'+i, settings);
 
             if (popupGap == undefined) {
                 setTimeout(function () {
@@ -41,12 +41,13 @@
             popups.forEach(function (popup) {
                 popup.document.title = '-';
             });
-            popups[5].popups = popups;
-            popups[5].setup();
+            popups[popups.length-1].popups = popups;
+            popups[popups.length-1].setup();
         }, 1000);
     }
 
     window.addEventListener('load', function () {
+        setupPopups();
         document.getElementById('click').addEventListener(
             'click',
             setupPopups
