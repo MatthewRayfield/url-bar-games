@@ -1,10 +1,15 @@
 var popups = [],
     keys = {},
 
-    levelHeight = 6,
+    pauline = ['💃', '🕺', '🍔'][Math.floor(Math.random()*3)],
+
+    level = 1,
+    lives = 3,
+
+    levelHeight = 7,
     levelWidth = 15,
 
-    popupWidth = window.screen.width, //1000,
+    popupWidth = window.screen.width,
     popupHeight = 50,
     popupGap = 50,
 
@@ -16,22 +21,29 @@ var popups = [],
 
     barrels = [],
     barrelMap = {},
+    barrelSpeed = 150,
+    barrelRate = 5000,
+    barrelBaseRate = 3000,
 
     nextBarrelAdd = 0,
     lastBarrelMove = 0,
     lastPlayerMove = 0,
 
+    levelWon = false,
+    showingLevel = false,
+    gameover = false,
     running = false,
     
     closeButton;
 
 var map = [
-        '               ',
-        '            1  ',
-        '1  1           ',
-        '       1    1  ',
-        '1    1         ',
-        '            1  ',
+        '               '.split(''),
+        '        1      '.split(''),
+        '            1  '.split(''),
+        '1  1           '.split(''),
+        '       1    1  '.split(''),
+        '1    1         '.split(''),
+        '            1  '.split(''),
     ];
 
 
@@ -53,56 +65,135 @@ function render() {
     if (timeToBarrel < 2000 && timeToBarrel > 1000) {
         gorillaX = 1;
     }
-    if (timeToBarrel < 1000 && timeToBarrel > 0000) {
-    }
 
     popups.forEach(function (popup, y) {
         var s = '', x;
 
-        for (x = 0; x < levelWidth; x ++) {
-            if (y == Math.floor(playerY) && x == Math.floor(playerX)) {
-                if (death > 0) {
-                    if (Math.floor(death) % 2) {
-                        s += '☠️';
+        if (!popup.document.location) return;
+
+        if (showingLevel) {
+            if (y == 1) {
+                for (x = 0; x < levelWidth; x ++) {
+                    if ((Math.floor(performance.now()/400) + x) % 2) {
+                        s += '🔺';
+                    }
+                    else {
+                        s += '🔻';
+                    }
+                }
+            }
+            else if (y == 2) {
+                s = toFullWidth('⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀LEVEL:' + level);
+            }
+            else if (y == 3) {
+                s = toFullWidth('⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀LIVES:' + lives);
+            }
+            else if (y == 4) {
+                for (x = 0; x < levelWidth; x ++) {
+                    if ((Math.floor(performance.now()/400) + x) % 2) {
+                        s += '🔻';
+                    }
+                    else {
+                        s += '🔺';
+                    }
+                }
+            }
+            else {
+                s = '';
+            }
+
+            popup.document.location.hash = s;
+        }
+        else if (gameover) {
+            if (y == 1) {
+                for (x = 0; x < levelWidth; x ++) {
+                    if ((Math.floor(performance.now()/200) % levelWidth) == levelWidth - x) {
+                        s += '🦍';
                     }
                     else {
                         s += '💀';
                     }
                 }
-                else {
-                    if (didMove) {
-                        if (Math.floor(performance.now()/200) % 2) {
-                            s += '🚶';
-                        }
-                        else {
-                            s += '🏃';
-                        }
+            }
+            else if (y == 2) {
+                s = toFullWidth('⠀⠀⠀⠀⠀⠀⠀⠀⠀GAME⠀OVER');
+            }
+            else if (y == 3) {
+                s = toFullWidth('⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀LEVEL:' + level);
+            }
+            else if (y == 4) {
+                for (x = 0; x < levelWidth; x ++) {
+                    if ((Math.floor(performance.now()/200) % levelWidth) == x) {
+                        s += '🦍';
                     }
                     else {
-                        s += '🚶';
+                        s += '💀';
                     }
                 }
             }
-            else if (y == 0 && x == gorillaX) {
-                s += '🦍';
-            }
-            else if (y == 0 && x == 0 && barrelShown) {
-                s += '🛢';
-            }
-            else if (barrelMap[x+','+y]) {
-                s += '🔴';
-            }
             else {
-                //if (map[y][x] == 0) s += '⠀';
-                //if (map[y][x] == 0) s += '⬛';
-                if (map[y][x] == '1') s += '⬆';
-                else s += '⬜';
+                s = '';
             }
-        }
 
-        if (popup.document.location) {
+            popup.document.location.hash = s;
+        }
+        else {
+            for (x = 0; x < levelWidth; x ++) {
+                if (y == Math.floor(playerY) && x == Math.floor(playerX)) {
+                    if (death > 0) {
+                        if (Math.floor(death) % 2) {
+                            s += '💀';
+                        }
+                        else {
+                            s += '🚶';
+                        }
+                    }
+                    else {
+                        if (didMove) {
+                            if (Math.floor(performance.now()/200) % 2) {
+                                s += '🚶';
+                            }
+                            else {
+                                s += '🏃';
+                            }
+                        }
+                        else {
+                            s += '🚶';
+                        }
+                    }
+                }
+                else if (y == 1 && x == gorillaX) {
+                    s += '🦍';
+                }
+                else if (y == 1 && x == 0 && barrelShown) {
+                    s += '🛢';
+                }
+                else if (barrelMap[x+','+y]) {
+                    s += '🔴';
+                }
+                else if (y == 0 && (x < 5 || x > 9)) {
+                    s += '🔶';
+                }
+                else if (y == 0 && x == 6) {
+                    s += pauline;
+                }
+                else if (levelWon && y == 0 && x == 7) {
+                    if (Math.floor(performance.now()/400) % 2) {
+                        s += '💖';
+                    }
+                    else {
+                        s += '💕';
+                    }
+                }
+                else {
+                    if (map[y][x] == '1') s += '⬆';
+                    else s += '⬜';
+                }
+            }
+
             popup.document.location.hash = '🔶' + s + '🔶';
         }
+
     });
 }
 
@@ -144,6 +235,17 @@ function movePlayer() {
     if (didMove) {
         lastPlayerMove = performance.now();
     }
+
+    if (playerY == 0) {
+        levelWon = true;
+        running = false;
+        setTimeout(function () {
+            levelWon = false;
+            nextLevel();
+            setupLevel();
+            showLevel();
+        }, 3000);
+    }
 }
 
 function moveBarrels() {
@@ -183,14 +285,15 @@ function moveBarrels() {
 }
 
 function addBarrel() {
-    barrels.push({x:2, y:0, d:1});
+    barrels.push({x:2, y:1, d:1});
 
-    nextBarrelAdd = performance.now() + 3000 + (Math.random() * 5000);
+    nextBarrelAdd = performance.now() + barrelBaseRate + (Math.random() * barrelRate);
 }
 
 function checkDeath() {
     if (barrelMap[Math.floor(playerX) +','+ Math.floor(playerY)]) {
         running = false;
+        lives --;
         death = 10;
     }
 }
@@ -203,7 +306,7 @@ function loop() {
             movePlayer();
             checkDeath();
         }
-        if (now - lastBarrelMove >= 150) {
+        if (now - lastBarrelMove >= barrelSpeed) {
             moveBarrels();
             checkDeath();
         }
@@ -214,8 +317,14 @@ function loop() {
         death -= .1;
 
         if (death <= 0) {
-            death = 0;
-            startLevel();
+            if (lives <= 0) {
+                gameover = true;
+            }
+            else {
+                death = 0;
+                setupLevel();
+                showLevel();
+            }
         }
     }
 
@@ -224,7 +333,33 @@ function loop() {
     setTimeout(loop, 1000/30);
 }
 
-function startLevel() {
+function nextLevel() {
+    level ++;
+
+    barrelRate -= 500;
+    if (barrelBaseRate > 1000) {
+        barrelBaseRate -= 250;
+    }
+
+    map.forEach(function (line, y) {
+        var r, x;
+
+        if (y == 0 || y == 1) return;
+
+        if (y == 2) {
+            r = 4 + Math.floor(Math.random() * (levelWidth-4));
+        }
+        else {
+            r = Math.floor(Math.random() * levelWidth);
+        }
+
+        for (x = 0; x < levelWidth; x ++) {
+            line[x] = x == r ? '1' : ' ';
+        }
+    });
+}
+
+function setupLevel() {
     playerX = 0;
     playerY = levelHeight - 1;
     barrels = [];
@@ -232,6 +367,15 @@ function startLevel() {
     lastBarrelMove = 0;
     lastPlayerMove = 0;
     running = true;
+}
+
+function showLevel() {
+    showingLevel = true;
+    running = false;
+    setTimeout(function () {
+        showingLevel = false;
+        running = true;
+    }, 2500);
 }
 
 function closeWindows() {
@@ -261,6 +405,7 @@ function setup() {
     closeButton.addEventListener('click', closeWindows);
     document.body.appendChild(closeButton);
 
-    startLevel();
+    setupLevel();
+    showLevel();
     loop();
 }
