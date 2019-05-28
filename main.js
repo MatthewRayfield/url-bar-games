@@ -334,6 +334,8 @@ function loop() {
 }
 
 function nextLevel() {
+    var i, l;
+
     level ++;
 
     barrelRate -= 500;
@@ -357,6 +359,13 @@ function nextLevel() {
             line[x] = x == r ? '1' : ' ';
         }
     });
+
+    if (level <= 3) l = 2;
+    else if (level <= 5) l = 1;
+
+    for (i = 0; i < l; i ++) {
+        map[Math.floor(Math.random()*(levelHeight - 2))+2][Math.floor(Math.random()*levelWidth)] = '1';
+    }
 }
 
 function setupLevel() {
