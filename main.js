@@ -17,7 +17,7 @@ var popups = [],
 
     playerX = 0,
     playerY = levelHeight - 1,
-    death = 0,
+    death = false,
 
     barrels = [],
     barrelMap = {},
@@ -30,11 +30,16 @@ var popups = [],
     lastPlayerMove = 0,
 
     levelWon = false,
+    levelEndTime,
+
     showingLevel = false,
     gameover = false,
     running = false,
     
-    closeButton;
+    closeButton,
+    
+    backgroundAudio,
+    walkingAudio;
 
 var map = [
         '               '.split(''),
@@ -48,22 +53,50 @@ var map = [
 
 
 function render() {
-    var timeToBarrel = nextBarrelAdd - performance.now(),
+    var timeTo,
         barrelShown = false,
-        gorillaX = 2;
+        paulineShown = true,
+        gorillaX = 2, gorillaY = 1;
 
-    if (timeToBarrel < 5000 && timeToBarrel > 4000) {
-        barrelShown = true;
+    if (levelWon) {
+        timeTo = levelEndTime - performance.now();
+
+        if (Math.floor(timeTo/800) >= 4) {
+            gorillaX = 3;
+        }
+        else if (Math.floor(timeTo/800) == 3) {
+            gorillaX = 4;
+        }
+        else if (Math.floor(timeTo/800) == 2) {
+            gorillaX = 5;
+        }
+        else if (Math.floor(timeTo/800) == 1) {
+            gorillaX = 5;
+            gorillaY = 0;
+            paulineShown = false;
+        }
+        else if (Math.floor(timeTo/800) <= 0) {
+            gorillaX = 5;
+            gorillaY = -1;
+            paulineShown = false;
+        }
     }
-    if (timeToBarrel < 4000 && timeToBarrel > 3000) {
-        barrelShown = true;
-    }
-    if (timeToBarrel < 3000 && timeToBarrel > 2000) {
-        barrelShown = true;
-        gorillaX = 1;
-    }
-    if (timeToBarrel < 2000 && timeToBarrel > 1000) {
-        gorillaX = 1;
+    else {
+        timeTo = nextBarrelAdd - performance.now();
+
+        if (timeTo < 5000 && timeTo > 4000) {
+            barrelShown = true;
+        }
+        if (timeTo < 4000 && timeTo > 3000) {
+            barrelShown = true;
+        }
+        if (timeTo < 3000 && timeTo > 2000) {
+            barrelShown = true;
+            gorillaX = 1;
+        }
+        if (timeTo < 2000 && timeTo > 1000) {
+            gorillaX = 1;
+        }
     }
 
     popups.forEach(function (popup, y) {
@@ -140,8 +173,8 @@ function render() {
         else {
             for (x = 0; x < levelWidth; x ++) {
                 if (y == Math.floor(playerY) && x == Math.floor(playerX)) {
-                    if (death > 0) {
-                        if (Math.floor(death) % 2) {
+                    if (death) {
+                        if (Math.floor(performance.now()/400) % 2) {
                             s += '💀';
                         }
                         else {
@@ -162,7 +195,7 @@ function render() {
                         }
                     }
                 }
-                else if (y == 1 && x == gorillaX) {
+                else if (y == gorillaY && x == gorillaX) {
                     s += '🦍';
                 }
                 else if (y == 1 && x == 0 && barrelShown) {
@@ -174,15 +207,15 @@ function render() {
                 else if (y == 0 && (x < 5 || x > 9)) {
                     s += '🔶';
                 }
-                else if (y == 0 && x == 6) {
+                else if (paulineShown && y == 0 && x == 6) {
                     s += pauline;
                 }
                 else if (levelWon && y == 0 && x == 7) {
                     if (Math.floor(performance.now()/400) % 2) {
-                        s += '💖';
+                        s += paulineShown ? '💖' : '💔';
                     }
                     else {
-                        s += '💕';
+                        s += paulineShown ? '💕' : '⬜';
                     }
                 }
                 else {
@@ -233,18 +266,24 @@ function movePlayer() {
     else if (playerY >= levelHeight) playerY = levelHeight - 1;
 
     if (didMove) {
+        walkingAudio.volume = 1;
         lastPlayerMove = performance.now();
+    }
+    else {
+        walkingAudio.volume = 0;
     }
 
     if (playerY == 0) {
+        playSound('dk-levelend');
         levelWon = true;
         running = false;
+        levelEndTime = performance.now() + 4000;
         setTimeout(function () {
             levelWon = false;
             nextLevel();
             setupLevel();
             showLevel();
-        }, 3000);
+        }, 4000);
     }
 }
 
@@ -294,7 +333,19 @@ function checkDeath() {
     if (barrelMap[Math.floor(playerX) +','+ Math.floor(playerY)]) {
         running = false;
         lives --;
-        death = 10;
+        death = true;
+        playSound('dk-death');
+
+        setTimeout(function () {
+            if (lives <= 0) {
+                gameover = true;
+            }
+            else {
+                death = false;
+                setupLevel();
+                showLevel();
+            }
+        }, 5000);
     }
 }
 
@@ -302,6 +353,8 @@ function loop() {
     var now = performance.now();
 
     if (running) {
+        backgroundAudio.volume = 1;
+
         if (now - lastPlayerMove >= 200) {
             movePlayer();
             checkDeath();
@@ -312,20 +365,9 @@ function loop() {
         }
         if (now > nextBarrelAdd) addBarrel();
     }
-
-    if (death > 0) {
-        death -= .1;
-
-        if (death <= 0) {
-            if (lives <= 0) {
-                gameover = true;
-            }
-            else {
-                death = 0;
-                setupLevel();
-                showLevel();
-            }
-        }
+    else {
+        backgroundAudio.volume = 0;
+        walkingAudio.volume = 0;
     }
 
     render();
@@ -379,6 +421,7 @@ function setupLevel() {
 }
 
 function showLevel() {
+    playSound('dk-howhigh');
     showingLevel = true;
     running = false;
     setTimeout(function () {
@@ -413,6 +456,11 @@ function setup() {
     closeButton.innerHTML = 'close';
     closeButton.addEventListener('click', closeWindows);
     document.body.appendChild(closeButton);
+
+    walkingAudio = playSound('dk-walking', 0);
+    walkingAudio.loop = true;
+    backgroundAudio = playSound('dk-bacmusic', 0);
+    backgroundAudio.loop = true;
 
     setupLevel();
     showLevel();
