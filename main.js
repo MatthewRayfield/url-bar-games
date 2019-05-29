@@ -35,16 +35,20 @@ var popups = [],
     showingLevel = false,
     gameover = false,
     running = false,
+
+    hammering = false,
+    hammerX,
     
     closeButton,
     
     backgroundAudio,
-    walkingAudio;
+    walkingAudio,
+    hammeringAudio;
 
 var map = [
         '               '.split(''),
         '        1      '.split(''),
-        '            1  '.split(''),
+        ' 2          1  '.split(''),
         '1  1           '.split(''),
         '       1    1  '.split(''),
         '1    1         '.split(''),
@@ -195,6 +199,9 @@ function render() {
                         }
                     }
                 }
+                else if (hammering && y == playerY && x == hammerX /*&& Math.floor(performance.now()/100) % 2*/) {
+                    s += '🔨';
+                }
                 else if (y == gorillaY && x == gorillaX) {
                     s += '🦍';
                 }
@@ -220,6 +227,7 @@ function render() {
                 }
                 else {
                     if (map[y][x] == '1') s += '⬆';
+                    else if (map[y][x] == '2') s += '🔨';
                     else s += '⬜';
                 }
             }
@@ -238,21 +246,23 @@ function movePlayer() {
     if (keys[37]) {
         didMove = true;
         playerX --; // left
+        hammerX = playerX - 1;
     }
     if (keys[39]) {
         didMove = true;
         playerX ++; // right
+        hammerX = playerX + 1;
     }
 
     if (keys[38]) {
-        if (map[Math.floor(playerY)][Math.floor(playerX)] == '1') {
+        if (!hammering && map[Math.floor(playerY)][Math.floor(playerX)] == '1') {
             didMove = true;
             playerY --; // up
         }
     }
     if (keys[40]) {
         if (Math.floor(playerY) < levelHeight - 1) {
-            if (map[Math.floor(playerY)+1][Math.floor(playerX)] == '1') {
+            if (!hammering && map[Math.floor(playerY)+1][Math.floor(playerX)] == '1') {
                 didMove = true;
                 playerY ++; // down
             }
@@ -271,6 +281,19 @@ function movePlayer() {
     }
     else {
         walkingAudio.volume = 0;
+    }
+
+    if (map[Math.floor(playerY)][Math.floor(playerX)] == '2') {
+        map[Math.floor(playerY)][Math.floor(playerX)] = '3';
+
+        hammering = true;
+
+        hammeringAudio.currentTime = 0;
+        hammeringAudio.volume = 1;
+
+        setTimeout(function () {
+            hammering = false;
+        }, 9000);
     }
 
     if (playerY == 0) {
@@ -331,6 +354,7 @@ function addBarrel() {
 
 function checkDeath() {
     if (barrelMap[Math.floor(playerX) +','+ Math.floor(playerY)]) {
+        hammering = false;
         running = false;
         lives --;
         death = true;
@@ -349,23 +373,56 @@ function checkDeath() {
     }
 }
 
+function checkSmash() {
+    var freshBarrels;
+
+    if (hammering) {
+        console.log(barrelMap[Math.floor(hammerX) +','+ Math.floor(playerY)]);
+        if (barrelMap[Math.floor(hammerX) +','+ Math.floor(playerY)]) {
+            playSound('dk-smash3', .3);
+
+            barrelMap = {};
+            freshBarrels = [];
+
+            barrels.forEach(function (barrel) {
+                if (barrel.x != Math.floor(hammerX) || barrel.y != Math.floor(playerY)) {
+                    barrelMap[barrel.x+','+barrel.y] = true;
+                    freshBarrels.push(barrel);
+                }
+            });
+
+            barrels = freshBarrels;
+        }
+    }
+}
+
 function loop() {
     var now = performance.now();
 
     if (running) {
-        backgroundAudio.volume = 1;
+        if (hammering) {
+            hammeringAudio.volume = 1;
+            backgroundAudio.volume = 0;
+        }
+        else {
+            hammeringAudio.volume = 0;
+            backgroundAudio.volume = 1;
+        }
 
         if (now - lastPlayerMove >= 200) {
             movePlayer();
+            checkSmash();
             checkDeath();
         }
         if (now - lastBarrelMove >= barrelSpeed) {
             moveBarrels();
+            checkSmash();
             checkDeath();
         }
         if (now > nextBarrelAdd) addBarrel();
     }
     else {
+        hammeringAudio.volume = 0;
         backgroundAudio.volume = 0;
         walkingAudio.volume = 0;
     }
@@ -376,7 +433,7 @@ function loop() {
 }
 
 function nextLevel() {
-    var i, l;
+    var i, l, x, y;
 
     level ++;
 
@@ -408,9 +465,27 @@ function nextLevel() {
     for (i = 0; i < l; i ++) {
         map[Math.floor(Math.random()*(levelHeight - 2))+2][Math.floor(Math.random()*levelWidth)] = '1';
     }
+
+    if (level <= 5) {
+        do {
+            y = Math.floor(Math.random()*(levelHeight - 2))+2;
+            x = Math.floor(Math.random()*levelWidth);
+        }
+        while (map[y][x] == '1');
+
+        map[y][x] = '2';
+    }
 }
 
 function setupLevel() {
+    map.forEach(function (line) {
+        var i;
+
+        for (i = 0; i < line.length; i ++) {
+            if (line[i] == '3') line[i] = '2';
+        }
+    });
+
     playerX = 0;
     playerY = levelHeight - 1;
     barrels = [];
@@ -461,6 +536,8 @@ function setup() {
     walkingAudio.loop = true;
     backgroundAudio = playSound('dk-bacmusic', 0);
     backgroundAudio.loop = true;
+    hammeringAudio = playSound('dk-hammertime', 0);
+    hammeringAudio.loop = true;
 
     setupLevel();
     showLevel();
