@@ -17,7 +17,7 @@ var popups = [],
     gameoverTime = 0,
 
     paddleSpeed = .3,
-    ballSpeed = .1,
+    ballSpeed = .03,
 
     blockLines = 2,
     blockCount = 0,
@@ -77,6 +77,7 @@ function addBlock() {
 
     map[p[0] +','+ p[1]] = emojis[Math.floor(Math.random()*emojis.length)];
     blockCount ++;
+    playSound('block');
 
     setTimeout(addBlock, 100);
 }
@@ -198,8 +199,10 @@ function moveBall() {
             playSound('win');
             running = false;
             level ++;
-            setupLevel();
-            startBall();
+            setTimeout(function () {
+                setupLevel();
+                startBall();
+            }, 1000);
         }
         else {
             playSound('hit1');
@@ -207,7 +210,10 @@ function moveBall() {
         }
     }
 
-    if (ballY < 1) {
+    if (ballY >= popups.length) {
+        loseLife();
+    }
+    else if (ballY < 1) {
         ballYV = ballSpeed;
         addSomeRandom();
     }
@@ -216,12 +222,9 @@ function moveBall() {
         playSound('hit2');
         addSomeRandom();
     }
-    else if (ballX < 0 || ballX > levelWidth - 1) {
+    else if (ballX < 0 || ballX >= levelWidth) {
         ballXV *= -1;
         addSomeRandom();
-    }
-    else if (ballY >= popups.length) {
-        loseLife();
     }
 
     ballX = Math.max(0, Math.min(levelWidth - .01, ballX));
