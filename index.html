@@ -1,38 +1,46 @@
 <meta charset="UTF-8">
-<button id="click">click to load</button>
+<button id="donky">load donkey kong</button>
+<button id="break">load breakout</button>
+<button id="close">close popups</button>
 <script>
-    var popups,
-        levelHeight = 7,
+    var popups = [],
         popupGap = undefined;
 
-    function setupPopups() {
+    function closeWindows() {
+        var popup;
+
+        running = false;
+
+        while (popups.length) {
+            popup = popups.shift();
+            popup.close();
+        }
+    }
+
+    function setupPopups(url, count) {
         var i, settings, popup, y,
             popupWidth = window.outerWidth,
             popupHeight = 50,
             x = window.screenX,
             yOffset = window.screenY + (window.outerHeight - window.innerHeight);
 
-        popups = [];
+        closeWindows();
 
-        for (i = 0; i < levelHeight; i ++) {
+        for (i = 0; i < count; i ++) {
             y = i * (popupGap||50) + yOffset;
 
             settings = 'width='+popupWidth+',height='+popupHeight+',left='+x+',top='+y;
 
-            popup = window.open('break.html#'+i, 'w'+i, settings);
+            popup = window.open(url+'#'+i, 'w'+i, settings);
 
             if (popupGap == undefined) {
                 setTimeout(function () {
                     popupGap = popup.outerHeight - popup.innerHeight;
-                    //popup.close();
-                    setupPopups();
+                    setupPopups.call(null, url, count);
                 }, 500);
                 return;
             }
             else {
-                //popup.resizeTo(popupWidth, popupHeight);
-                //popup.moveTo(x, y);
-
                 popups.push(popup);
             }
         }
@@ -47,10 +55,8 @@
     }
 
     window.addEventListener('load', function () {
-        setupPopups();
-        document.getElementById('click').addEventListener(
-            'click',
-            setupPopups
-        );
+        document.getElementById('donky').addEventListener('click', function () {setupPopups('dk.html', 7);});
+        document.getElementById('break').addEventListener('click', function () {setupPopups('break.html', 7);});
+        document.getElementById('close').addEventListener('click', closeWindows);
     });
 </script>
