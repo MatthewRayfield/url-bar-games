@@ -543,3 +543,5 @@ function setup() {
     showLevel();
     loop();
 }
+
+history.replaceState({}, '', '/');

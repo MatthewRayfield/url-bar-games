@@ -284,3 +284,5 @@ function setup() {
     startBall();
     loop();
 }
+
+history.replaceState({}, '', '/');
