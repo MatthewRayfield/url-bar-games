@@ -23,7 +23,9 @@ var popups = [],
     blockCount = 0,
     positions,
     
-    ballX, ballY, ballXV, ballYV;
+    ballX, ballY, ballXV, ballYV,
+
+    baseURL;
 
 var emojis = [
     '🤠', '👽', '🤷', '👏', '👀', '💩', '🐸', '💯', '💊', '💸', '🔥', '🍆', '🍕', '💦', '💎', '💰', '🔫', '🚬', '🐓', '🗿'
@@ -77,7 +79,7 @@ function addBlock() {
 
     map[p[0] +','+ p[1]] = emojis[Math.floor(Math.random()*emojis.length)];
     blockCount ++;
-    playSound('block');
+    playSound(baseURL + 'block');
 
     setTimeout(addBlock, 100);
 }
@@ -157,11 +159,11 @@ function loseLife() {
     lives --;
 
     if (lives < 0) {
-        playSound('over');
+        playSound(baseURL + 'over');
         gameoverTime = Date.now();
     }
     else {
-        playSound('ded');
+        playSound(baseURL + 'ded');
         setTimeout(function () {
             deathTime = 0;
             running = true;
@@ -196,7 +198,7 @@ function moveBall() {
 
         blockCount --;
         if (blockCount == 0) {
-            playSound('win');
+            playSound(baseURL + 'win');
             running = false;
             level ++;
             setTimeout(function () {
@@ -205,7 +207,7 @@ function moveBall() {
             }, 1000);
         }
         else {
-            playSound('hit1');
+            playSound(baseURL + 'hit1');
             addSomeRandom();
         }
     }
@@ -219,7 +221,7 @@ function moveBall() {
     }
     else if (y == popups.length - 1 && Math.floor(ballX) >= Math.floor(paddleX) && Math.floor(ballX) < Math.floor(paddleX) + paddleSize) {
         ballYV = -ballSpeed;
-        playSound('hit2');
+        playSound(baseURL + 'hit2');
         addSomeRandom();
     }
     else if (ballX < 0 || ballX >= levelWidth) {
@@ -265,6 +267,10 @@ function closeWindows() {
 }
 
 function setup() {
+    var split = location.href.split('/');
+    split.pop();
+    baseURL = split.join('/') + '/';
+
     document.addEventListener('keydown', function (event) {
         keys[event.which] = true;
     });
@@ -283,6 +289,8 @@ function setup() {
     setupLevel();
     startBall();
     loop();
-}
 
-history.replaceState({}, '', '/');
+    popups.forEach(function (popup) {
+        popup.history.replaceState({}, '', '/');
+    });
+}

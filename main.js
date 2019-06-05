@@ -43,7 +43,9 @@ var popups = [],
     
     backgroundAudio,
     walkingAudio,
-    hammeringAudio;
+    hammeringAudio,
+    
+    baseURL;
 
 var map = [
         '               '.split(''),
@@ -297,7 +299,7 @@ function movePlayer() {
     }
 
     if (playerY == 0) {
-        playSound('dk-levelend');
+        playSound(baseURL + 'dk-levelend');
         levelWon = true;
         running = false;
         levelEndTime = performance.now() + 4000;
@@ -358,7 +360,7 @@ function checkDeath() {
         running = false;
         lives --;
         death = true;
-        playSound('dk-death');
+        playSound(baseURL + 'dk-death');
 
         setTimeout(function () {
             if (lives <= 0) {
@@ -379,7 +381,7 @@ function checkSmash() {
     if (hammering) {
         console.log(barrelMap[Math.floor(hammerX) +','+ Math.floor(playerY)]);
         if (barrelMap[Math.floor(hammerX) +','+ Math.floor(playerY)]) {
-            playSound('dk-smash3', .3);
+            playSound(baseURL + 'dk-smash3', .3);
 
             barrelMap = {};
             freshBarrels = [];
@@ -496,7 +498,7 @@ function setupLevel() {
 }
 
 function showLevel() {
-    playSound('dk-howhigh');
+    playSound(baseURL + 'dk-howhigh');
     showingLevel = true;
     running = false;
     setTimeout(function () {
@@ -517,6 +519,10 @@ function closeWindows() {
 }
 
 function setup() {
+    var split = location.href.split('/');
+    split.pop();
+    baseURL = split.join('/') + '/';
+
     document.addEventListener('keydown', function (event) {
         keys[event.which] = true;
     });
@@ -532,16 +538,18 @@ function setup() {
     closeButton.addEventListener('click', closeWindows);
     document.body.appendChild(closeButton);
 
-    walkingAudio = playSound('dk-walking', 0);
+    walkingAudio = playSound(baseURL + 'dk-walking', 0);
     walkingAudio.loop = true;
-    backgroundAudio = playSound('dk-bacmusic', 0);
+    backgroundAudio = playSound(baseURL + 'dk-bacmusic', 0);
     backgroundAudio.loop = true;
-    hammeringAudio = playSound('dk-hammertime', 0);
+    hammeringAudio = playSound(baseURL + 'dk-hammertime', 0);
     hammeringAudio.loop = true;
 
     setupLevel();
     showLevel();
     loop();
-}
 
-history.replaceState({}, '', '/');
+    popups.forEach(function (popup) {
+        popup.history.replaceState({}, '', '/');
+    });
+}
