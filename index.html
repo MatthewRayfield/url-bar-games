@@ -17,7 +17,7 @@
         }
     }
 
-    function setupPopups(url, count) {
+    function setupPopups(name, count) {
         var i, settings, popup, y,
             popupWidth = window.outerWidth,
             popupHeight = 50,
@@ -31,12 +31,17 @@
 
             settings = 'width='+popupWidth+',height='+popupHeight+',left='+x+',top='+y;
 
-            popup = window.open(url+'#'+i, 'w'+i, settings);
+            if (i == count-1) {
+                popup = window.open('popup.html#'+name, 'w'+i, settings);
+            }
+            else {
+                popup = window.open('popup.html', 'w'+i, settings);
+            }
 
             if (popupGap == undefined) {
                 setTimeout(function () {
                     popupGap = popup.outerHeight - popup.innerHeight;
-                    setupPopups.call(null, url, count);
+                    setupPopups.call(null, name, count);
                 }, 500);
                 return;
             }
@@ -55,8 +60,8 @@
     }
 
     window.addEventListener('load', function () {
-        document.getElementById('donky').addEventListener('click', function () {setupPopups('dk.html', 7);});
-        document.getElementById('break').addEventListener('click', function () {setupPopups('break.html', 7);});
+        document.getElementById('donky').addEventListener('click', function () {setupPopups('donkey-kong', 7);});
+        document.getElementById('break').addEventListener('click', function () {setupPopups('breakout', 7);});
         document.getElementById('close').addEventListener('click', closeWindows);
     });
 </script>

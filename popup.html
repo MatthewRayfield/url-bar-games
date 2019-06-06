@@ -1,0 +1,15 @@
+<meta charset="UTF-8">
+<script src="utils.js"></script>
+<script>
+    var script,
+        name = location.hash.slice(1);
+    
+    if (name.length) {
+        window.addEventListener('load', function () {
+                script = document.createElement('script');
+                script.src = name + '.js?' + Date.now();
+                document.body.appendChild(script);
+        });
+    }
+</script>
+
