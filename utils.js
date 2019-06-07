@@ -23,3 +23,21 @@ function playSound(fileName, volume) {
 
     return audio;
 }
+
+function degToRad(degrees) {
+    return degrees * (Math.PI / 180);
+}
+function radToDeg(radians) {
+    return radians * (180 / Math.PI);
+}
+
+function rotateCoord(coords, angle) {
+    var x = coords.x, y = coords.y;
+    var radians = degToRad(angle),
+        cos = Math.cos(radians),
+        sin = Math.sin(radians),
+        nx = (cos * x) + (sin * y),
+        ny = (cos * y) - (sin * x);
+
+    return {x: nx, y: ny};
+}
