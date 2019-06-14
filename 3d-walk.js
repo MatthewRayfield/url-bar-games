@@ -33,17 +33,17 @@ function loop() {
 
     if (keys[16]) speed *= 3;
 
-    if (keys[87]) {
+    if (keys[87] || keys[38]) {
         movement.y = -speed;
     }
-    else if (keys[83]) {
+    else if (keys[83] || keys[40]) {
         movement.y = speed;
     }
 
-    if (keys[68]) {
+    if (keys[68] || keys[39]) {
         player.rotation.y -= .2;
     }
-    else if (keys[65]) {
+    else if (keys[65] || keys[37]) {
         player.rotation.y += .2;
     }
 

@@ -1,4 +1,5 @@
 <meta charset="UTF-8">
+<button id="wave">load wave</button>
 <button id="donky">load donkey kong</button>
 <button id="break">load breakout</button>
 <button id="webcam">load webcam</button>
@@ -64,6 +65,7 @@
     }
 
     window.addEventListener('load', function () {
+        document.getElementById('wave').addEventListener('click', function () {setupPopups('wavy', 7);});
         document.getElementById('donky').addEventListener('click', function () {setupPopups('donkey-kong', 7);});
         document.getElementById('break').addEventListener('click', function () {setupPopups('breakout', 7);});
         document.getElementById('webcam').addEventListener('click', function () {setupPopups('webcam', 8);});
